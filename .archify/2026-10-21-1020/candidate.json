@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "RETORNA runtime architecture",
+    "locale": "en",
+    "output": ".archify/2026-10-21-1020/retorna-architecture.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "tablero",
+        "label": "Dashboard read path",
+        "focus": ["operator", "dashboard", "api", "rules", "db"],
+        "note": "The browser loads / then reads store balance and open alerts through FastAPI."
+      },
+      {
+        "id": "agente",
+        "label": "Agent tool loop",
+        "focus": ["dashboard", "api", "agent", "claude", "tools"],
+        "note": "POST /api/agent/chat runs Claude with tools until a text stop or 8 turns."
+      },
+      {
+        "id": "escritura",
+        "label": "Event write path",
+        "focus": ["agent", "tools", "rules", "db"],
+        "note": "registrar_evento inserts a movimiento, then recalculates saldo from movements."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "operator",
+      "type": "external",
+      "label": "Operator",
+      "sublabel": "supervisor / driver",
+      "pos": [40, 80],
+      "size": [130, 64]
+    },
+    {
+      "id": "dashboard",
+      "type": "frontend",
+      "label": "Dashboard",
+      "sublabel": "dashboard.html",
+      "pos": [240, 80],
+      "size": [140, 64]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "FastAPI",
+      "sublabel": "uvicorn :8000",
+      "pos": [470, 80],
+      "size": [150, 64]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Agent loop",
+      "sublabel": "run_agent",
+      "pos": [710, 80],
+      "size": [150, 64]
+    },
+    {
+      "id": "claude",
+      "type": "cloud",
+      "label": "Claude API",
+      "sublabel": "claude-sonnet-4",
+      "pos": [960, 80],
+      "size": [150, 64]
+    },
+    {
+      "id": "rules",
+      "type": "backend",
+      "label": "Conciliation",
+      "sublabel": "deterministic rules",
+      "pos": [470, 250],
+      "size": [150, 64]
+    },
+    {
+      "id": "tools",
+      "type": "backend",
+      "label": "Tool handlers",
+      "sublabel": "dispatch",
+      "pos": [710, 250],
+      "size": [150, 64]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "SQLite / Postgres",
+      "sublabel": "DATABASE_URL",
+      "pos": [470, 410],
+      "size": [150, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "RETORNA uvicorn process",
+      "wraps": ["api", "agent", "rules", "tools"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "op-dash",
+      "from": "operator",
+      "to": "dashboard",
+      "label": "opens /",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dash-api",
+      "from": "dashboard",
+      "to": "api",
+      "label": "HTTP /api",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-agent",
+      "from": "api",
+      "to": "agent",
+      "label": "run_agent"
+    },
+    {
+      "id": "agent-claude",
+      "from": "agent",
+      "to": "claude",
+      "label": "tool use"
+    },
+    {
+      "id": "api-rules",
+      "from": "api",
+      "to": "rules",
+      "label": "REST saldo",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "agent-tools",
+      "from": "agent",
+      "to": "tools",
+      "label": "dispatch",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "tools-rules",
+      "from": "tools",
+      "to": "rules",
+      "label": "recalcula",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "rules-db",
+      "from": "rules",
+      "to": "db",
+      "label": "SELECT movs",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "tools-db",
+      "from": "tools",
+      "to": "db",
+      "label": "INSERT evento",
+      "fromSide": "bottom",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Conciliation",
+      "items": [
+        "Saldo = entregadas − recogidas from movimientos; critical if saldo >= 50 or tasa >= 0.25"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Agent",
+      "items": [
+        "Tool loop max 8 turns: saldo, tiendas, evento, alerta, criticas, historial"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Not in this runtime",
+      "items": [
+        "WhatsApp, vision, and PDF actas are guide-only; the CLI calls run_agent directly"
+      ]
+    }
+  ]
+}

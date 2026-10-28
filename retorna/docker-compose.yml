@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  # ─── Base de datos PostgreSQL ───
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-retorna}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retorna}
+      POSTGRES_DB: ${POSTGRES_DB:-retorna}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./app/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retorna"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── API FastAPI ───
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://retorna:retorna@db:5432/retorna
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+volumes:
+  pgdata:
