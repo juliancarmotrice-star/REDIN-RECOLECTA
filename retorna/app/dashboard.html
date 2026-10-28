@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupo Bimbo — Control de Canastas en Consignación</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --navy: #003A8C;
+            --navy-deep: #002B6B;
+            --bg-primary: #F4F6FA;
+            --bg-secondary: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #EEF2F8;
+            --border: #D5DEEB;
+            --text-primary: #0D2A55;
+            --text-secondary: #4A5F7A;
+            --text-muted: #7B8DA3;
+            --accent: #E30613;
+            --accent-hover: #C10510;
+            --accent-glow: rgba(227, 6, 19, 0.10);
+            --telegram: #229ED9;
+            --telegram-bg: rgba(34, 158, 217, 0.12);
+            --success: #1B8A4A;
+            --success-bg: rgba(27, 138, 74, 0.12);
+            --warning: #D97706;
+            --warning-bg: rgba(217, 119, 6, 0.12);
+            --danger: #E30613;
+            --danger-bg: rgba(227, 6, 19, 0.10);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 4px 20px rgba(0, 58, 140, 0.10);
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #FFFFFF;
+            border-bottom: 3px solid var(--navy);
+            padding: 12px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(0, 58, 140, 0.08);
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .brand-logo {
+            height: 52px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+        .header-sub { font-size: 11px; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .header-badges { display: flex; gap: 10px; align-items: center; }
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-supabase { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+        .badge-tg { background: var(--telegram-bg); color: var(--telegram); border: 1px solid rgba(34,158,217,0.3); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            padding: 12px 32px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab:hover { color: var(--text-primary); background: var(--bg-card); }
+        .tab.active {
+            color: var(--navy);
+            background: var(--accent-glow);
+            border: 1px solid rgba(227, 6, 19, 0.28);
+            font-weight: 600;
+        }
+
+        /* Container & Sections */
+        .container { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.25s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .kpi-card.purple::before { background: linear-gradient(90deg, var(--navy), var(--accent)); }
+        .kpi-card.red::before { background: linear-gradient(90deg, var(--accent), #ff5a63); }
+        .kpi-card.green::before { background: linear-gradient(90deg, #1B8A4A, #4ade80); }
+        .kpi-card.blue::before { background: linear-gradient(90deg, var(--navy), #3d7ad6); }
+        .kpi-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+        .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .kpi-value { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .kpi-sub { font-size: 12px; color: var(--text-muted); }
+
+        /* Cards & Tables */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .card-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .card-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            padding: 12px 24px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #EEF2F8;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 14px 24px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:hover td { background: rgba(0, 58, 140, 0.04); }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .badge-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+        .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+        .badge-info { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-hover)); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(227, 6, 19, 0.35); }
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent-hover); }
+        .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+        .btn-telegram { background: var(--telegram); color: white; }
+        .btn-telegram:hover { background: #1c88bd; }
+
+        /* Forms & Modals */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .form-input:focus, .form-select:focus { border-color: var(--accent); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 90%;
+            max-width: 520px;
+            animation: fadeIn 0.2s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .modal h2 { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+        /* Telegram & Simulator Layout */
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 960px) { .grid-2col { grid-template-columns: 1fr; } }
+
+        .code-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            color: var(--navy);
+            word-break: break-all;
+            margin: 12px 0;
+        }
+
+        /* Chat / Simulator */
+        .chat-container { display: flex; flex-direction: column; height: 520px; }
+        .chat-messages {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .chat-msg {
+            max-width: 82%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13.5px;
+            line-height: 1.5;
+            animation: fadeIn 0.25s ease;
+            word-break: break-word;
+        }
+        .chat-msg.user { align-self: flex-end; background: linear-gradient(135deg, var(--navy), #0052b4); color: white; border-bottom-right-radius: 4px; }
+        .chat-msg.tg-user { align-self: flex-end; background: linear-gradient(135deg, #0284c7, var(--telegram)); color: white; border-bottom-right-radius: 4px; }
+        .chat-msg.agent { align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        .chat-msg.system { align-self: center; background: transparent; color: var(--text-muted); font-size: 12px; text-align: center; }
+        .chat-input-row { display: flex; gap: 8px; margin-top: 14px; }
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+        .chat-input:focus { border-color: var(--accent); }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.25);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--navy);
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 30px rgba(0, 58, 140, 0.18);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 300;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-left">
+        <img class="brand-logo" src="/logo-bimbo.png" alt="Grupo Bimbo">
+        <div>
+            <div class="header-sub">Trazabilidad de Canastas · Piloto SQL Supabase</div>
+        </div>
+    </div>
+    <div class="header-badges">
+        <span class="status-badge badge-supabase"><span class="dot"></span> Supabase Conectado</span>
+        <span class="status-badge badge-tg" id="header-tg-badge"><span class="dot"></span> Telegram Activo</span>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">📊 Panorama General</button>
+    <button class="tab" onclick="switchTab('transportadores')">🚚 Transportadores</button>
+    <button class="tab" onclick="switchTab('entregas')">📥 Entregas</button>
+    <button class="tab" onclick="switchTab('recogidas')">📤 Recogidas</button>
+    <button class="tab" onclick="switchTab('foto')">📸 Conteo por Foto</button>
+    <button class="tab" onclick="switchTab('telegram')">✈️ Telegram Bot & SQL</button>
+    <button class="tab" onclick="switchTab('chat')">🤖 Agente IA</button>
+</div>
+
+<!-- Container -->
+<div class="container">
+
+    <!-- 1. PANORAMA -->
+    <div id="section-overview" class="section active">
+        <div class="kpi-grid">
+            <div class="kpi-card purple">
+                <div class="kpi-label">Transportadores Registrados</div>
+                <div class="kpi-value" id="kpi-transportadores">--</div>
+                <div class="kpi-sub">Empresas y flotas logísticas</div>
+            </div>
+            <div class="kpi-card blue">
+                <div class="kpi-label">Entregas Totales</div>
+                <div class="kpi-value" id="kpi-entregas">--</div>
+                <div class="kpi-sub">Despachos registrados</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-label">Recogidas Totales</div>
+                <div class="kpi-value" id="kpi-recogidas">--</div>
+                <div class="kpi-sub">Retornos registrados</div>
+            </div>
+            <div class="kpi-card red">
+                <div class="kpi-label">Canastas Pendientes</div>
+                <div class="kpi-value" id="kpi-saldo">--</div>
+                <div class="kpi-sub">En tiendas (sin recoger)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <span class="card-title">📦 Balance y Tasa de No Retorno por Tienda</span>
+                    <div class="card-desc">Cálculo en tiempo real comparando entregas vs recogidas en Supabase SQL</div>
+                </div>
+                <button class="btn btn-sm btn-outline" onclick="loadOverview()">🔄 Refrescar</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tienda</th>
+                        <th>Entregadas</th>
+                        <th>Recogidas</th>
+                        <th>Peq. Pendientes</th>
+                        <th>Grd. Pendientes</th>
+                        <th>Total Pendiente</th>
+                        <th>Tasa No Retorno</th>
+                    </tr>
+                </thead>
+                <tbody id="overview-table">
+                    <tr><td colspan="7" class="empty-state"><span class="spinner"></span> Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 2. TRANSPORTADORES (CRUD COMPLETO) -->
+    <div id="section-transportadores" class="section">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <span class="card-title">🚚 Gestión de Transportadores</span>
+                    <div class="card-desc">Agrega, edita o elimina transportadores y flotas logísticas en Supabase</div>
+                </div>
+                <button class="btn btn-primary" onclick="openTransportadorModal()">+ Agregar Transportador</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Transportador</th>
+                        <th>Contacto</th>
+                        <th>Teléfono</th>
+                        <th>Correo</th>
+                        <th>Dirección</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="transportadores-table">
+                    <tr><td colspan="8" class="empty-state"><span class="spinner"></span> Cargando transportadores...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. ENTREGAS -->
+    <div id="section-entregas" class="section">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <span class="card-title">📥 Registro de Entregas (Canastas Entregadas)</span>
+                    <div class="card-desc">Datos guardados en la tabla <code>entregas</code> por la app web o el bot de Telegram</div>
+                </div>
+                <button class="btn btn-primary" onclick="openEntregaModal()">+ Registrar Entrega</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Transportador</th>
+                        <th>Tienda</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Canastas Pequeñas</th>
+                        <th>Canastas Grandes</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="entregas-table">
+                    <tr><td colspan="8" class="empty-state"><span class="spinner"></span> Cargando entregas...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. RECOGIDAS -->
+    <div id="section-recogidas" class="section">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <span class="card-title">📤 Registro de Recogidas (Canastas Recuperadas)</span>
+                    <div class="card-desc">Datos guardados en la tabla <code>recogidas</code> por conductores o supervisores</div>
+                </div>
+                <button class="btn btn-primary" onclick="openRecogidaModal()">+ Registrar Recogida</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Transportador</th>
+                        <th>Tienda</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Canastas Pequeñas</th>
+                        <th>Canastas Grandes</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="recogidas-table">
+                    <tr><td colspan="8" class="empty-state"><span class="spinner"></span> Cargando recogidas...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. TELEGRAM BOT & SQL -->
+    <div id="section-telegram" class="section">
+        <div class="grid-2col">
+            <!-- Columna Izquierda: Instrucciones y Config -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">✈️ Conexión con Telegram Bot</span>
+                    </div>
+                    <div style="padding: 24px;">
+                        <p style="font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 16px;">
+                            Los conductores y supervisores interactúan por Telegram. Cada mensaje que reporta una entrega, recogida o alta de proveedor se guarda de inmediato en la base de datos SQL de Supabase.
+                        </p>
+
+                        <div style="background: var(--bg-primary); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">ENDPOINT WEBHOOK DE TELEGRAM</div>
+                            <div style="font-family: monospace; color: var(--accent-hover); font-size: 13px;">POST /api/telegram/webhook</div>
+                        </div>
+
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">📋 Comandos rápidos del bot:</div>
+                        <ul style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; margin-left: 20px;">
+                            <li><code>/proveedores</code> — Lista los proveedores en Supabase</li>
+                            <li><code>/nuevo_proveedor Nombre | Contacto | Tel</code> — Registra proveedor en SQL</li>
+                            <li><code>/eliminar_proveedor ID</code> — Elimina proveedor en SQL</li>
+                            <li><code>/entrega ID_PROV TIENDA PEQ GRD</code> — Registra entrega en tabla SQL</li>
+                            <li><code>/recogida ID_PROV TIENDA PEQ GRD</code> — Registra recogida en tabla SQL</li>
+                            <li><code>/saldo TIENDA</code> — Consulta saldo y % no retorno</li>
+                            <li><code>/criticas</code> — Alerta de tiendas prioritarias</li>
+                        </ul>
+
+                        <div style="margin-top: 20px; padding: 14px; background: rgba(34,158,217,0.08); border: 1px solid rgba(34,158,217,0.2); border-radius: 8px;">
+                            <div style="font-size: 12px; font-weight: 700; color: var(--telegram); margin-bottom: 4px;">PARA CONECTAR TU BOT REAL EN TELEGRAM:</div>
+                            <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                1. Crea tu bot en Telegram con <b>@BotFather</b> y copia el Token.<br>
+                                2. Ponlo en tu archivo <code>.env</code>: <code>TELEGRAM_BOT_TOKEN=tu_token</code>.<br>
+                                3. Ejecuta en terminal: <code>python -m app.telegram.bot</code> (polling directo).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Simulador Interactivo de Telegram -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <span class="card-title">📱 Simulador en Vivo de Telegram</span>
+                            <div class="card-desc">Prueba comandos y mensajes aquí; impactan directamente en Supabase</div>
+                        </div>
+                        <span class="badge badge-info">Simulador Live</span>
+                    </div>
+                    <div style="padding: 20px;">
+                        <div class="chat-container">
+                            <div class="chat-messages" id="tg-messages">
+                                <div class="chat-msg system">Simula lo que un conductor escribe en Telegram. Prueba escribir: <code>/start</code> o <code>/proveedores</code> o <code>/entrega 2 Exito Calle 80 15 5</code></div>
+                            </div>
+                            <div class="chat-input-row">
+                                <input type="text" class="chat-input" id="tg-input" placeholder="Escribe un comando o mensaje de conductor..." onkeydown="if(event.key==='Enter') sendTgSimulation()">
+                                <button class="btn btn-telegram" id="tg-send" onclick="sendTgSimulation()">Enviar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. AGENTE IA -->
+    <div id="section-chat" class="section">
+        <div style="max-width:850px; margin: 0 auto;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <span class="card-title">🤖 Agente RETORNA</span>
+                        <div class="card-desc">Conversación con el agente con acceso a herramientas SQL de Supabase</div>
+                    </div>
+                </div>
+                <div style="padding: 24px;">
+                    <div class="chat-messages" id="chat-messages" style="height: 440px;">
+                        <div class="chat-msg system">
+                            ¡Hola! Soy RETORNA. Puedo responder preguntas de saldo, registrar entregas/recogidas y consultar proveedores en Supabase.
+                        </div>
+                    </div>
+                    <div class="chat-input-row">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Pregunta algo o instruye al agente..." onkeydown="if(event.key==='Enter') sendAgentChat()">
+                        <button class="btn btn-primary" id="chat-send" onclick="sendAgentChat()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <!-- 7. CONTEO VISUAL POR FOTO -->
+    <div id="section-foto" class="section">
+        <div class="grid-2col">
+            <!-- Columna 1: Subir imagen -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <span class="card-title">📸 Subir Foto de Canastas</span>
+                        <div class="card-desc">Toma o sube una foto para que la IA cuente las canastas automáticamente</div>
+                    </div>
+                </div>
+                <div style="padding: 24px;">
+                    <div style="border: 2px dashed var(--border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(0,0,0,0.15);" id="drop-zone" onclick="document.getElementById('foto-input').click()">
+                        <div style="font-size: 42px; margin-bottom: 8px;">📷</div>
+                        <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">Haz clic o arrastra la foto aquí</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Soporta fotos de celular (JPG, PNG, WEBP)</div>
+                        <input type="file" id="foto-input" accept="image/*" style="display:none;" onchange="handleFotoUpload(event)">
+                    </div>
+
+                    <div id="foto-preview-container" style="display:none; margin-top: 16px; text-align: center;">
+                        <img id="foto-preview" style="max-width: 100%; max-height: 280px; border-radius: var(--radius); border: 1px solid var(--border);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna 2: Resultado de conteo y Registro -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <span class="card-title">🔢 Conteo Detectado por IA</span>
+                        <div class="card-desc">Cálculo visual automático</div>
+                    </div>
+                    <span class="badge badge-info" id="badge-conteo-estado">Esperando foto</span>
+                </div>
+                <div style="padding: 24px;">
+                    <div id="conteo-placeholder" style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 13px;">
+                        Sube una foto en el panel izquierdo para calcular el número de canastas con IA.
+                    </div>
+
+                    <div id="conteo-result-card" style="display:none;">
+                        <div class="kpi-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                            <div class="kpi-card purple" style="padding: 14px;">
+                                <div class="kpi-label">Total Canastas</div>
+                                <div class="kpi-value" id="vision-total" style="font-size: 26px;">0</div>
+                            </div>
+                            <div class="kpi-card blue" style="padding: 14px;">
+                                <div class="kpi-label">Pequeñas</div>
+                                <div class="kpi-value" id="vision-peq" style="font-size: 26px;">0</div>
+                            </div>
+                            <div class="kpi-card green" style="padding: 14px;">
+                                <div class="kpi-label">Grandes</div>
+                                <div class="kpi-value" id="vision-grd" style="font-size: 26px;">0</div>
+                            </div>
+                        </div>
+
+                        <div style="background: var(--bg-primary); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12.5px; color: var(--text-secondary); margin-bottom: 20px;" id="vision-desc"></div>
+
+                        <div class="form-group">
+                            <label class="form-label">Transportador</label>
+                            <select class="form-select" id="vision-prov-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tienda</label>
+                            <input class="form-input" id="vision-tienda" placeholder="Ej: Exito Calle 80">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="btn btn-primary" style="flex:1;" onclick="saveVisionMovement('entrega')">📥 Registrar Entrega</button>
+                            <button class="btn btn-telegram" style="flex:1;" onclick="saveVisionMovement('recogida')">📤 Registrar Recogida</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal 1: Nuevo / Editar Transportador -->
+<div class="modal-overlay" id="modal-transportador">
+    <div class="modal">
+        <h2 id="modal-prov-title">🚚 Nuevo Transportador</h2>
+        <input type="hidden" id="prov-id">
+        <div class="form-group">
+            <label class="form-label">Nombre del Transportador *</label>
+            <input class="form-input" id="prov-nombre" placeholder="Ej: Transportes Logísticos del Norte S.A.S.">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Persona de Contacto</label>
+                <input class="form-input" id="prov-contacto" placeholder="Ej: Carlos Gómez">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input class="form-input" id="prov-telefono" placeholder="Ej: +57 310 1234567">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Correo Electrónico</label>
+                <input class="form-input" id="prov-correo" placeholder="contacto@transportador.co">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Estado</label>
+                <select class="form-select" id="prov-estado">
+                    <option value="activo" selected>Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Dirección</label>
+            <input class="form-input" id="prov-direccion" placeholder="Ej: Carrera 15 # 85-30, Bogotá">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeTransportadorModal()">Cancelar</button>
+            <button class="btn btn-primary" id="btn-save-prov" onclick="saveTransportador()">Guardar en Supabase</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Registrar Entrega -->
+<div class="modal-overlay" id="modal-entrega">
+    <div class="modal">
+        <h2>📥 Registrar Entrega de Canastas</h2>
+        <div class="form-group">
+            <label class="form-label">Transportador *</label>
+            <select class="form-select" id="ent-prov-select"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nombre de la Tienda *</label>
+            <input class="form-input" id="ent-tienda" placeholder="Ej: Exito Calle 80">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Canastas Pequeñas</label>
+                <input type="number" class="form-input" id="ent-peq" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Canastas Grandes</label>
+                <input type="number" class="form-input" id="ent-grd" value="0" min="0">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeEntregaModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveEntrega()">Guardar Entrega</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Registrar Recogida -->
+<div class="modal-overlay" id="modal-recogida">
+    <div class="modal">
+        <h2>📤 Registrar Recogida de Canastas</h2>
+        <div class="form-group">
+            <label class="form-label">Transportador *</label>
+            <select class="form-select" id="rec-prov-select"></select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nombre de la Tienda *</label>
+            <input class="form-input" id="rec-tienda" placeholder="Ej: Exito Calle 80">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Canastas Pequeñas</label>
+                <input type="number" class="form-input" id="rec-peq" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Canastas Grandes</label>
+                <input type="number" class="form-input" id="rec-grd" value="0" min="0">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="closeRecogidaModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveRecogida()">Guardar Recogida</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-text">Acción completada con éxito</span>
+</div>
+
+<script>
+const API = '';
+let cachedTransportadores = [];
+let cachedProveedores = cachedTransportadores;
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = isError ? '❌' : '✅';
+    document.getElementById('toast-text').textContent = msg;
+    t.className = 'toast show';
+    setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('section-' + tab).classList.add('active');
+    event.currentTarget.classList.add('active');
+
+    if (tab === 'overview') loadOverview();
+    if (tab === 'transportadores' || tab === 'proveedores') loadTransportadores();
+    if (tab === 'entregas') loadEntregas();
+    if (tab === 'recogidas') loadRecogidas();
+    if (tab === 'foto') populateProvSelect('vision-prov-select');
+    if (tab === 'telegram') checkTelegramStatus();
+}
+
+// ─── 1. PANORAMA ───
+async function loadOverview() {
+    try {
+        const [provs, entregas, recogidas, tiendas] = await Promise.all([
+            fetch(API + '/api/transportadores').then(r => r.json()),
+            fetch(API + '/api/entregas').then(r => r.json()),
+            fetch(API + '/api/recogidas').then(r => r.json()),
+            fetch(API + '/api/resumen/tiendas').then(r => r.json()),
+        ]);
+
+        cachedTransportadores = Array.isArray(provs) ? provs : [];
+        cachedProveedores = cachedTransportadores;
+        const kpiT = document.getElementById('kpi-transportadores') || document.getElementById('kpi-proveedores');
+        if (kpiT) kpiT.textContent = cachedTransportadores.length;
+        document.getElementById('kpi-entregas').textContent = Array.isArray(entregas) ? entregas.length : 0;
+        document.getElementById('kpi-recogidas').textContent = Array.isArray(recogidas) ? recogidas.length : 0;
+
+        const totalSaldo = Array.isArray(tiendas) ? tiendas.reduce((s, t) => s + (t.saldo?.total || 0), 0) : 0;
+        document.getElementById('kpi-saldo').textContent = totalSaldo;
+
+        const tbody = document.getElementById('overview-table');
+        if (!Array.isArray(tiendas) || tiendas.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay movimientos registrados. Registra entregas desde la app o Telegram para ver el panorama.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = tiendas.map(t => {
+            const pct = (t.tasa_no_retorno * 100).toFixed(1);
+            const cls = pct >= 25 ? 'badge-danger' : pct >= 15 ? 'badge-warning' : 'badge-success';
+            return `<tr>
+                <td><strong>${t.nombre_tienda}</strong></td>
+                <td>${t.entregas?.total || 0}</td>
+                <td>${t.recogidas?.total || 0}</td>
+                <td>${t.saldo?.pequenas || 0}</td>
+                <td>${t.saldo?.grandes || 0}</td>
+                <td><strong>${t.saldo?.total || 0}</strong></td>
+                <td><span class="badge ${cls}">${pct}%</span></td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error(e);
+        showToast('Error cargando datos del panorama: ' + e.message, true);
+    }
+}
+
+// ─── 2. TRANSPORTADORES (CRUD) ───
+async function loadTransportadores() {
+    try {
+        const provs = await fetch(API + '/api/transportadores').then(r => r.json());
+        cachedTransportadores = Array.isArray(provs) ? provs : [];
+        cachedProveedores = cachedTransportadores;
+        const tbody = document.getElementById('transportadores-table') || document.getElementById('proveedores-table');
+
+        if (!tbody) return;
+        if (cachedTransportadores.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay transportadores registrados en Supabase. Haz clic en "+ Agregar Transportador".</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = cachedTransportadores.map(p => {
+            const id = p.id_transportador || p.id_proveedor;
+            const nombre = p.nombre_transportador || p.nombre_proveedor || '';
+            return `<tr>
+                <td><code>${id}</code></td>
+                <td><strong>${nombre}</strong></td>
+                <td>${p.contacto || '-'}</td>
+                <td>${p.telefono || '-'}</td>
+                <td>${p.correo || '-'}</td>
+                <td>${p.direccion || '-'}</td>
+                <td><span class="badge badge-success">${p.estado || 'activo'}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline" onclick="editTransportador(${id})">Editar</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTransportador(${id}, '${nombre.replace("'", "\\'")}')">Eliminar</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        showToast('Error cargando transportadores: ' + e.message, true);
+    }
+}
+const loadProveedores = loadTransportadores;
+
+function openTransportadorModal(data = null) {
+    const modalTitle = document.getElementById('modal-prov-title');
+    if (modalTitle) modalTitle.textContent = data ? '✏️ Editar Transportador' : '🚚 Nuevo Transportador';
+    document.getElementById('prov-id').value = data?.id_transportador || data?.id_proveedor || '';
+    document.getElementById('prov-nombre').value = data?.nombre_transportador || data?.nombre_proveedor || '';
+    document.getElementById('prov-contacto').value = data?.contacto || '';
+    document.getElementById('prov-telefono').value = data?.telefono || '';
+    document.getElementById('prov-correo').value = data?.correo || '';
+    document.getElementById('prov-direccion').value = data?.direccion || '';
+    document.getElementById('prov-estado').value = data?.estado || 'activo';
+    const m = document.getElementById('modal-transportador') || document.getElementById('modal-proveedor');
+    if (m) m.classList.add('open');
+}
+const openProveedorModal = openTransportadorModal;
+
+function closeTransportadorModal() {
+    const m = document.getElementById('modal-transportador') || document.getElementById('modal-proveedor');
+    if (m) m.classList.remove('open');
+}
+const closeProveedorModal = closeTransportadorModal;
+
+async function saveTransportador() {
+    const id = document.getElementById('prov-id').value;
+    const body = {
+        nombre_transportador: document.getElementById('prov-nombre').value.trim(),
+        nombre_proveedor: document.getElementById('prov-nombre').value.trim(),
+        contacto: document.getElementById('prov-contacto').value.trim(),
+        telefono: document.getElementById('prov-telefono').value.trim(),
+        correo: document.getElementById('prov-correo').value.trim(),
+        direccion: document.getElementById('prov-direccion').value.trim(),
+        estado: document.getElementById('prov-estado').value,
+    };
+
+    if (!body.nombre_transportador) {
+        showToast('El nombre del transportador es obligatorio', true);
+        return;
+    }
+
+    try {
+        const btn = document.getElementById('btn-save-prov');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+        if (id) {
+            await fetch(API + '/api/transportadores/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            showToast('Transportador actualizado en Supabase');
+        } else {
+            await fetch(API + '/api/transportadores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            showToast('Nuevo transportador creado en Supabase');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Guardar en Supabase';
+        closeTransportadorModal();
+        loadTransportadores();
+        loadOverview();
+    } catch (e) {
+        showToast('Error al guardar transportador: ' + e.message, true);
+    }
+}
+const saveProveedor = saveTransportador;
+
+async function editTransportador(id) {
+    try {
+        const prov = await fetch(API + '/api/transportadores/' + id).then(r => r.json());
+        openTransportadorModal(prov);
+    } catch (e) {
+        showToast('Error cargando transportador: ' + e.message, true);
+    }
+}
+const editProveedor = editTransportador;
+
+async function deleteTransportador(id, nombre) {
+    if (!confirm(`¿Estás seguro de eliminar el transportador "${nombre}" (ID: ${id}) de Supabase?`)) return;
+    try {
+        const res = await fetch(API + '/api/transportadores/' + id, { method: 'DELETE' });
+        if (res.status === 409) {
+            const data = await res.json();
+            const doCascade = confirm(`⚠️ ${data.error}\n\n¿Deseas eliminar el transportador junto con TODAS sus entregas y recogidas asociadas en cascada?`);
+            if (doCascade) {
+                const resCascade = await fetch(API + '/api/transportadores/' + id + '?cascade=true', { method: 'DELETE' });
+                if (resCascade.ok) {
+                    showToast(`Transportador "${nombre}" y sus movimientos fueron eliminados`);
+                    loadTransportadores();
+                    loadOverview();
+                    return;
+                }
+            } else {
+                return;
+            }
+        } else if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al eliminar');
+        }
+        showToast(`Transportador "${nombre}" eliminado de Supabase`);
+        loadTransportadores();
+        loadOverview();
+    } catch (e) {
+        showToast('Error al eliminar transportador: ' + e.message, true);
+    }
+}
+const deleteProveedor = deleteTransportador;
+
+function getProvLabel(id) {
+    const list = cachedTransportadores.length ? cachedTransportadores : cachedProveedores;
+    if (!list || list.length === 0) return `Transp. #${id}`;
+    const p = list.find(x => Number(x.id_transportador || x.id_proveedor) === Number(id));
+    if (p) {
+        const nombre = p.nombre_transportador || p.nombre_proveedor;
+        return `<strong>${nombre}</strong> <small style="color:var(--text-muted);">(ID ${id})</small>`;
+    }
+    return `<span style="color:var(--text-muted);">Transp. #${id}</span>`;
+}
+const getTransportadorLabel = getProvLabel;
+
+// ─── 3. ENTREGAS ───
+async function loadEntregas() {
+    try {
+        if (!cachedProveedores || cachedProveedores.length === 0) {
+            cachedProveedores = await fetch(API + '/api/proveedores').then(r => r.json());
+        }
+        const rows = await fetch(API + '/api/entregas').then(r => r.json());
+        const tbody = document.getElementById('entregas-table');
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay entregas registradas. Usa "+ Registrar Entrega" o reporta por Telegram.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(e => `<tr>
+            <td><code>#${e.id_entrega}</code></td>
+            <td>${getProvLabel(e.id_proveedor)}</td>
+            <td><strong>${e.nombre_tienda || '-'}</strong></td>
+            <td>${e.fecha || '-'}</td>
+            <td>${e.hora || '-'}</td>
+            <td>${e.cantidad_canastas_pequenas || 0}</td>
+            <td>${e.cantidad_canastas_grandes || 0}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteEntrega(${e.id_entrega})">Eliminar</button>
+            </td>
+        </tr>`).join('');
+    } catch (e) {
+        showToast('Error cargando entregas: ' + e.message, true);
+    }
+}
+
+function openEntregaModal() {
+    populateProvSelect('ent-prov-select');
+    document.getElementById('ent-tienda').value = '';
+    document.getElementById('ent-peq').value = 10;
+    document.getElementById('ent-grd').value = 5;
+    document.getElementById('modal-entrega').classList.add('open');
+}
+function closeEntregaModal() { document.getElementById('modal-entrega').classList.remove('open'); }
+
+async function saveEntrega() {
+    const idProv = parseInt(document.getElementById('ent-prov-select').value);
+    const tienda = document.getElementById('ent-tienda').value.trim();
+    const peq = parseInt(document.getElementById('ent-peq').value) || 0;
+    const grd = parseInt(document.getElementById('ent-grd').value) || 0;
+
+    if (!idProv) { showToast('Selecciona o crea un transportador primero', true); return; }
+    if (!tienda) { showToast('El nombre de la tienda es obligatorio', true); return; }
+
+    const now = new Date();
+    const body = {
+        id_proveedor: idProv,
+        nombre_tienda: tienda,
+        fecha: now.toISOString().split('T')[0],
+        hora: now.toTimeString().split(' ')[0],
+        cantidad_canastas_pequenas: peq,
+        cantidad_canastas_grandes: grd,
+    };
+
+    try {
+        const res = await fetch(API + '/api/entregas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Error del servidor');
+        showToast('Entrega guardada en Supabase SQL');
+        closeEntregaModal();
+        loadEntregas();
+        loadOverview();
+    } catch (e) {
+        showToast('Error registrando entrega: ' + e.message, true);
+    }
+}
+
+async function deleteEntrega(id) {
+    if (!confirm(`¿Eliminar la entrega #${id}?`)) return;
+    try {
+        await fetch(API + '/api/entregas/' + id, { method: 'DELETE' });
+        showToast('Entrega eliminada');
+        loadEntregas();
+        loadOverview();
+    } catch (e) {
+        showToast('Error al eliminar entrega: ' + e.message, true);
+    }
+}
+
+// ─── 4. RECOGIDAS ───
+async function loadRecogidas() {
+    try {
+        if (!cachedProveedores || cachedProveedores.length === 0) {
+            cachedProveedores = await fetch(API + '/api/proveedores').then(r => r.json());
+        }
+        const rows = await fetch(API + '/api/recogidas').then(r => r.json());
+        const tbody = document.getElementById('recogidas-table');
+        if (!Array.isArray(rows) || rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay recogidas registradas. Registra una con "+ Registrar Recogida" o vía Telegram.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => `<tr>
+            <td><code>#${r.id_recogida}</code></td>
+            <td>${getProvLabel(r.id_proveedor)}</td>
+            <td><strong>${r.nombre_tienda || '-'}</strong></td>
+            <td>${r.fecha || '-'}</td>
+            <td>${r.hora || '-'}</td>
+            <td>${r.cantidad_canastas_pequenas || 0}</td>
+            <td>${r.cantidad_canastas_grandes || 0}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteRecogida(${r.id_recogida})">Eliminar</button>
+            </td>
+        </tr>`).join('');
+    } catch (e) {
+        showToast('Error cargando recogidas: ' + e.message, true);
+    }
+}
+
+function openRecogidaModal() {
+    populateProvSelect('rec-prov-select');
+    document.getElementById('rec-tienda').value = '';
+    document.getElementById('rec-peq').value = 8;
+    document.getElementById('rec-grd').value = 4;
+    document.getElementById('modal-recogida').classList.add('open');
+}
+function closeRecogidaModal() { document.getElementById('modal-recogida').classList.remove('open'); }
+
+async function saveRecogida() {
+    const idProv = parseInt(document.getElementById('rec-prov-select').value);
+    const tienda = document.getElementById('rec-tienda').value.trim();
+    const peq = parseInt(document.getElementById('rec-peq').value) || 0;
+    const grd = parseInt(document.getElementById('rec-grd').value) || 0;
+
+    if (!idProv) { showToast('Selecciona un transportador', true); return; }
+    if (!tienda) { showToast('El nombre de la tienda es obligatorio', true); return; }
+
+    const now = new Date();
+    const body = {
+        id_proveedor: idProv,
+        nombre_tienda: tienda,
+        fecha: now.toISOString().split('T')[0],
+        hora: now.toTimeString().split(' ')[0],
+        cantidad_canastas_pequenas: peq,
+        cantidad_canastas_grandes: grd,
+    };
+
+    try {
+        const res = await fetch(API + '/api/recogidas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Error del servidor');
+        showToast('Recogida guardada en Supabase SQL');
+        closeRecogidaModal();
+        loadRecogidas();
+        loadOverview();
+    } catch (e) {
+        showToast('Error registrando recogida: ' + e.message, true);
+    }
+}
+
+async function deleteRecogida(id) {
+    if (!confirm(`¿Eliminar la recogida #${id}?`)) return;
+    try {
+        await fetch(API + '/api/recogidas/' + id, { method: 'DELETE' });
+        showToast('Recogida eliminada');
+        loadRecogidas();
+        loadOverview();
+    } catch (e) {
+        showToast('Error al eliminar recogida: ' + e.message, true);
+    }
+}
+
+async function populateProvSelect(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    if (cachedTransportadores.length === 0) {
+        cachedTransportadores = await fetch(API + '/api/transportadores').then(r => r.json());
+        cachedProveedores = cachedTransportadores;
+    }
+    sel.innerHTML = cachedTransportadores.map(p => {
+        const id = p.id_transportador || p.id_proveedor;
+        const nombre = p.nombre_transportador || p.nombre_proveedor;
+        return `<option value="${id}">${id} - ${nombre}</option>`;
+    }).join('');
+}
+const populateTransportadorSelect = populateProvSelect;
+
+// ─── 5. SIMULADOR TELEGRAM & STATUS ───
+async function checkTelegramStatus() {
+    try {
+        const data = await fetch(API + '/api/telegram/status').then(r => r.json());
+        const badge = document.getElementById('header-tg-badge');
+        if (data.configured) {
+            badge.innerHTML = `<span class="dot"></span> Telegram: @${data.bot_info?.username || 'Configurado'}`;
+        } else {
+            badge.innerHTML = `<span class="dot" style="background:#f59e0b"></span> Telegram (Simulador Listo)`;
+        }
+    } catch (e) {}
+}
+
+async function sendTgSimulation() {
+    const input = document.getElementById('tg-input');
+    const btn = document.getElementById('tg-send');
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMsg('tg-messages', text, 'tg-user');
+    input.value = '';
+    btn.disabled = true;
+
+    try {
+        // Enviar al webhook simulado
+        const payload = {
+            update_id: Date.now(),
+            message: {
+                message_id: Math.floor(Math.random() * 10000),
+                from: { id: 99999, first_name: "Julian Conductor" },
+                chat: { id: 99999, type: "private" },
+                date: Math.floor(Date.now() / 1000),
+                text: text,
+            }
+        };
+
+        const res = await fetch(API + '/api/telegram/webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        // Si guardó algo o respondió, mostramos feedback
+        let respFeedback = '';
+        if (data.action === 'entrega') {
+            respFeedback = `📥 <b>[Entrega Guardada en Supabase SQL]</b><br>ID: #${data.id}<br>Tienda: ${data.data?.nombre_tienda}<br>Pequeñas: ${data.data?.cantidad_canastas_pequenas} | Grandes: ${data.data?.cantidad_canastas_grandes}`;
+            loadOverview();
+        } else if (data.action === 'recogida') {
+            respFeedback = `📤 <b>[Recogida Guardada en Supabase SQL]</b><br>ID: #${data.id}<br>Tienda: ${data.data?.nombre_tienda}<br>Pequeñas: ${data.data?.cantidad_canastas_pequenas} | Grandes: ${data.data?.cantidad_canastas_grandes}`;
+            loadOverview();
+        } else if (data.action === 'create_transportador' || data.action === 'create_proveedor') {
+            const id = data.data?.id_transportador || data.data?.id_proveedor;
+            const nom = data.data?.nombre_transportador || data.data?.nombre_proveedor;
+            respFeedback = `🚚 <b>[Transportador Guardado en Supabase]</b><br>ID: ${id} - ${nom}`;
+            loadOverview();
+        } else if (data.action === 'delete_transportador' || data.action === 'delete_proveedor') {
+            respFeedback = `🗑️ <b>[Transportador ID ${data.id} Eliminado de Supabase]</b>`;
+            loadOverview();
+        } else if (data.action === 'saldo') {
+            respFeedback = `📊 <b>Saldo ${data.data?.nombre_tienda}:</b> Pendientes: ${data.data?.saldo?.total} (Tasa no retorno: ${(data.data?.tasa_no_retorno*100).toFixed(1)}%)`;
+        } else {
+            respFeedback = `🤖 Procesado por el bot (Acción: <code>${data.action || data.status}</code>)`;
+        }
+
+        appendMsg('tg-messages', respFeedback, 'agent');
+    } catch (e) {
+        appendMsg('tg-messages', '❌ Error de conexión al webhook: ' + e.message, 'agent');
+    }
+
+    btn.disabled = false;
+}
+
+// ─── 6. AGENTE IA ───
+async function sendAgentChat() {
+    const input = document.getElementById('chat-input');
+    const btn = document.getElementById('chat-send');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    appendMsg('chat-messages', msg, 'user');
+    input.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+        const res = await fetch(API + '/api/agent/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        if (data.error) {
+            appendMsg('chat-messages', '⚠️ ' + data.error + (data.hint ? '<br><small>' + data.hint + '</small>' : ''), 'agent');
+        } else {
+            let tools = '';
+            if (data.tools_used?.length) {
+                tools = '<div style="font-size:11px;color:var(--accent-hover);margin-top:6px;border-top:1px solid var(--border);padding-top:4px;">🔧 Herramientas SQL: ' + data.tools_used.map(t => t.tool).join(', ') + '</div>';
+            }
+            appendMsg('chat-messages', data.response + tools, 'agent');
+            loadOverview();
+        }
+    } catch (e) {
+        appendMsg('chat-messages', '❌ Error al comunicar con el agente.', 'agent');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Enviar';
+}
+
+function appendMsg(containerId, html, role) {
+    const c = document.getElementById(containerId);
+    const d = document.createElement('div');
+    d.className = 'chat-msg ' + role;
+    d.innerHTML = html;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+}
+
+// ─── 7. CONTEO VISUAL POR FOTO ───
+let currentVisionData = null;
+
+async function handleFotoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Mostrar preview
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('foto-preview').src = e.target.result;
+        document.getElementById('foto-preview-container').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    const badge = document.getElementById('badge-conteo-estado');
+    badge.innerHTML = '<span class="spinner"></span> Analizando con IA...';
+    badge.className = 'badge badge-warning';
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(API + '/api/vision/contar', {
+            method: 'POST',
+            body: formData,
+        });
+        if (!res.ok) throw new Error('Error en el análisis de imagen');
+        const data = await res.json();
+        currentVisionData = data;
+
+        document.getElementById('conteo-placeholder').style.display = 'none';
+        document.getElementById('conteo-result-card').style.display = 'block';
+
+        document.getElementById('vision-total').textContent = data.total || 0;
+        document.getElementById('vision-peq').textContent = data.canastas_pequenas || 0;
+        let desgloseHtml = '';
+        if (data.desglose_niveles && data.desglose_niveles.length) {
+            desgloseHtml = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px;"><b>Inspección nivel por nivel:</b><br>' +
+                data.desglose_niveles.map(n => `• Nivel ${n.nivel}: <b>${n.tipo === 'grande' ? '📦 Grande' : '🔹 Pequeña'}</b> ${n.posicion ? '('+n.posicion+')' : ''}`).join('<br>') + '</div>';
+        }
+
+        document.getElementById('vision-desc').innerHTML = `ℹ️ <b>Diagnóstico:</b> ${data.descripcion || 'Conteo exitoso'}<br><small style="color:var(--text-muted);">Motor: ${data.motor || 'IA'} · Confianza: ${data.confianza || 'alta'}</small>${desgloseHtml}`;
+
+        badge.textContent = `Detectadas: ${data.total} canastas`;
+        badge.className = 'badge badge-success';
+
+        populateProvSelect('vision-prov-select');
+    } catch (e) {
+        badge.textContent = 'Error de análisis';
+        badge.className = 'badge badge-danger';
+        showToast('Error al analizar la imagen: ' + e.message, true);
+    }
+}
+
+async function saveVisionMovement(tipo) {
+    if (!currentVisionData) return;
+    const idProv = parseInt(document.getElementById('vision-prov-select').value);
+    const tienda = document.getElementById('vision-tienda').value.trim();
+    if (!idProv) { showToast('Selecciona un transportador', true); return; }
+    if (!tienda) { showToast('Ingresa el nombre de la tienda', true); return; }
+
+    const now = new Date();
+    const body = {
+        id_proveedor: idProv,
+        nombre_tienda: tienda,
+        fecha: now.toISOString().split('T')[0],
+        hora: now.toTimeString().split(' ')[0],
+        cantidad_canastas_pequenas: currentVisionData.canastas_pequenas || 0,
+        cantidad_canastas_grandes: currentVisionData.canastas_grandes || 0,
+    };
+
+    try {
+        const endpoint = tipo === 'entrega' ? '/api/entregas' : '/api/recogidas';
+        const res = await fetch(API + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error((await res.json()).error || 'Error al guardar');
+        showToast(`¡${tipo.toUpperCase()} guardada con éxito en Supabase SQL!`);
+        document.getElementById('vision-tienda').value = '';
+        loadOverview();
+    } catch (e) {
+        showToast('Error: ' + e.message, true);
+    }
+}
+
+// Inicializar
+loadOverview();
+checkTelegramStatus();
+</script>
+</body>
+</html>
